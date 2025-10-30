@@ -265,21 +265,12 @@ async function sendAvailabilityNotification(
               <div class="content">
                 <p>안녕하세요!</p>
                 <p>모니터링 중이던 도메인을 이제 등록할 수 있습니다:</p>
-                
                 <div class="domain">${domain.name}</div>
-                
                 <div class="info">
                   <strong>상태:</strong> 사용 가능 ✅<br>
                   <strong>확인 시간:</strong> ${new Date().toLocaleString('ko-KR', { timeZone: 'Asia/Seoul' })}<br>
                   <strong>모니터링 시작:</strong> ${new Date(domain.created_at).toLocaleDateString('ko-KR')}
                 </div>
-                
-                <p>지금 바로 도메인을 등록하세요!</p>
-                
-                <a href="https://www.namecheap.com/domains/registration/results/?domain=${domain.name}" class="button">
-                  도메인 등록하기
-                </a>
-                
                 <div class="footer">
                   <p>Domain Checker - 자동 알림 시스템</p>
                   <p style="font-size: 12px; color: #9ca3af;">

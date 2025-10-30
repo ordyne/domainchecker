@@ -5,7 +5,7 @@ import type { DomainCheckResult } from '@/types';
  * Domainsduck API 설정
  */
 const DOMAINSDUCK_CONFIG = {
-  apiUrl: process.env.DOMAINSDUCK_API_URL,
+  apiUrl: process.env.DOMAINSDUCK_API_URL || 'https://eu.domainsduck.com',
   apiKey: process.env.DOMAINSDUCK_API_KEY,
   timeout: 8000, // 8초 타임아웃 (Vercel 10초 제한 고려)
   rateLimit: {
@@ -69,14 +69,13 @@ async function fetchWithTimeout(
 export async function checkDomain(domain: string): Promise<boolean> {
   try {
     const { apiUrl, apiKey } = validateConfig();
-    const url = `${apiUrl}/v1/check?domain=${encodeURIComponent(domain)}`;
+    const url = `${apiUrl}/api/get/?domain=${encodeURIComponent(domain)}&apikey=${apiKey}`;
 
     console.log(`[Domainsduck] Checking domain: ${domain}`);
 
     const response = await fetchWithTimeout(url, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
     });
@@ -88,11 +87,12 @@ export async function checkDomain(domain: string): Promise<boolean> {
 
     const data = await response.json();
     
-    // API 응답 형식에 따라 조정 필요
-    // 예상 응답: { available: boolean, domain: string }
-    const isAvailable = data.available === true;
+    // Domainsduck API 응답 형식:
+    // { "availability": "true" | "false" | "premium domain" | "reserved" | "bad tld" }
+    const availability = data.availability?.toString().toLowerCase();
+    const isAvailable = availability === 'true' || availability === 'premium domain';
     
-    console.log(`[Domainsduck] ${domain}: ${isAvailable ? 'Available ✅' : 'Registered ❌'}`);
+    console.log(`[Domainsduck] ${domain}: ${isAvailable ? 'Available ✅' : 'Registered ❌'} (${availability})`);
     
     return isAvailable;
 
@@ -127,40 +127,30 @@ export async function checkDomain(domain: string): Promise<boolean> {
  */
 export async function checkDomainsBulk(domains: string[]): Promise<Map<string, boolean>> {
   try {
-    const { apiUrl, apiKey } = validateConfig();
-    const url = `${apiUrl}/v1/check/bulk`;
-
     if (domains.length === 0) {
       return new Map();
     }
 
-    console.log(`[Domainsduck] Bulk checking ${domains.length} domains`);
+    console.log(`[Domainsduck] Bulk checking ${domains.length} domains (using individual calls)`);
 
-    const response = await fetchWithTimeout(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ domains }),
-    });
+    // Domainsduck에 Bulk API가 없으므로 개별 호출
+    // 하지만 병렬로 처리하여 성능 향상
+    const results = await Promise.all(
+      domains.map(async (domain) => {
+        try {
+          const available = await checkDomain(domain);
+          return { domain, available };
+        } catch (error) {
+          console.error(`[Domainsduck] Error checking ${domain}:`, error);
+          return { domain, available: false };
+        }
+      })
+    );
 
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => 'Unknown error');
-      throw new Error(`Bulk API request failed (${response.status}): ${errorText}`);
-    }
-
-    const data = await response.json();
-    
-    // API 응답 형식에 따라 조정 필요
-    // 예상 응답: { results: Array<{ domain: string, available: boolean }> }
     const resultsMap = new Map<string, boolean>();
-    
-    if (Array.isArray(data.results)) {
-      data.results.forEach((result: { domain: string; available: boolean }) => {
-        resultsMap.set(result.domain, result.available === true);
-      });
-    }
+    results.forEach(({ domain, available }) => {
+      resultsMap.set(domain, available);
+    });
 
     console.log(`[Domainsduck] Bulk check completed: ${resultsMap.size} results`);
     

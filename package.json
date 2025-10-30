@@ -1,0 +1,52 @@
+{
+  "name": "domainchecker",
+  "version": "0.1.0",
+  "description": "원하는 도메인의 등록 가능 여부를 자동으로 모니터링하고 알림을 받는 웹 애플리케이션",
+  "author": "Ordyne",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ordyne/domainchecker"
+  },
+  "keywords": [
+    "domain",
+    "checker",
+    "monitoring",
+    "domain-availability",
+    "nextjs",
+    "supabase",
+    "resend",
+    "domainsduck",
+    "email-notifications",
+    "typescript",
+    "react"
+  ],
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint"
+  },
+  "dependencies": {
+    "@supabase/auth-helpers-nextjs": "^0.10.0",
+    "@supabase/ssr": "^0.7.0",
+    "@supabase/supabase-js": "^2.77.0",
+    "date-fns": "^4.1.0",
+    "next": "16.0.1",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "resend": "^6.3.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "babel-plugin-react-compiler": "1.0.0",
+    "eslint": "^9",
+    "eslint-config-next": "16.0.1",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}

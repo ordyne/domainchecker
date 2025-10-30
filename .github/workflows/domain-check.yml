@@ -1,0 +1,51 @@
+name: Domain Availability Check
+
+on:
+  schedule:
+    # 매일 오전 9시 (KST) = UTC 0시
+    - cron: '0 0 * * *'
+    # 매일 오후 9시 (KST) = UTC 12시
+    - cron: '0 12 * * *'
+  
+  # 수동 실행 가능
+  workflow_dispatch:
+
+jobs:
+  check-domains:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check domain availability
+        env:
+          VERCEL_APP_URL: ${{ secrets.VERCEL_APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          echo "🔍 Checking domain availability..."
+          
+          RESPONSE=$(curl -s -w "\n%{http_code}" \
+            -X POST \
+            -H "Authorization: Bearer ${CRON_SECRET}" \
+            -H "Content-Type: application/json" \
+            "${VERCEL_APP_URL}/api/check-domains")
+          
+          HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+          BODY=$(echo "$RESPONSE" | sed '$d')
+          
+          echo "📊 Response Status: ${HTTP_CODE}"
+          echo "📄 Response Body: ${BODY}"
+          
+          if [ "$HTTP_CODE" -eq 200 ]; then
+            echo "✅ Domain check completed successfully!"
+          else
+            echo "❌ Domain check failed with status code: ${HTTP_CODE}"
+            exit 1
+          fi
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "⚠️ Domain check workflow failed!"
+          echo "Please check the logs above for details."

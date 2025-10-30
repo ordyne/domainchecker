@@ -125,9 +125,12 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 
 # Resend 설정
 RESEND_API_KEY=your_resend_api_key
+RESEND_FROM_EMAIL=onboarding@resend.dev
+NOTIFICATION_EMAIL=your_resend_account_email  # 테스트 모드: Resend 계정 이메일 필수
 
 # Domainsduck 설정
 DOMAINSDUCK_API_KEY=your_domainsduck_api_key
+DOMAINSDUCK_API_URL=https://eu.domainsduck.com  # 또는 https://us.domainsduck.com
 
 # CRON 보안 (GitHub Actions용)
 CRON_SECRET=your_random_secret_string
@@ -140,7 +143,10 @@ CRON_SECRET=your_random_secret_string
 | `NEXT_PUBLIC_SUPABASE_URL` | Supabase 프로젝트 URL | [Supabase Dashboard](https://app.supabase.com/) → Settings → API |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Supabase Anonymous Key | 동일한 위치 |
 | `RESEND_API_KEY` | Resend API 키 | [Resend Dashboard](https://resend.com/api-keys) → API Keys |
-| `DOMAINSDUCK_API_KEY` | Domainsduck API 키 | [Domainsduck](https://domainsduck.com/) 가입 후 발급 |
+| `RESEND_FROM_EMAIL` | 발신 이메일 주소 | 테스트: `onboarding@resend.dev` |
+| `NOTIFICATION_EMAIL` | 알림 수신 이메일 | **Resend 계정 이메일** (테스트 모드 제한) |
+| `DOMAINSDUCK_API_KEY` | Domainsduck API 키 | [Domainsduck](https://api.domainsduck.com/) 가입 후 발급 |
+| `DOMAINSDUCK_API_URL` | Domainsduck API 서버 | `https://eu.domainsduck.com` 또는 `https://us.domainsduck.com` |
 | `CRON_SECRET` | CRON 엔드포인트 보안용 시크릿 | 임의의 안전한 문자열 생성 (예: UUID) |
 
 4. **Supabase 데이터베이스 설정**

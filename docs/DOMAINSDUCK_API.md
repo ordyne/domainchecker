@@ -11,7 +11,7 @@
 ### 1. Domainsduck API 키 발급
 
 1. [Domainsduck](https://domainsduck.com) 웹사이트 방문
-2. 계정 생성/로그인
+2. 계정 생성/로그인 (Register)
 3. API 키 발급
 
 ### 2. 환경 변수 설정
@@ -19,8 +19,8 @@
 `.env.local` 파일에 API 키 추가:
 
 ```env
-DOMAINSDUCK_API_KEY=ddk_your_api_key_here
-DOMAINSDUCK_API_URL=https://api.domainsduck.com
+DOMAINSDUCK_API_KEY=your_api_key_here
+DOMAINSDUCK_API_URL=https://eu.domainsduck.com
 ```
 
 ---
@@ -239,12 +239,10 @@ const DOMAINSDUCK_CONFIG = {
 
 - **제한:** 30 요청/시간
 - **초과 시:** 다음 가능 시간까지 대기 필요
-- **권장:** `checkDomainWithRateLimit()` 사용
 
 ### 타임아웃
 
-- **기본값:** 8초
-- **이유:** Vercel 10초 제한 고려
+- **기본값:** 8초 (Vercel 10초 제한 고려)
 - **타임아웃 시:** `AbortError` 발생
 
 ---
@@ -329,40 +327,40 @@ test();
 
 ## 📊 API 응답 형식
 
-### Single Check (예상)
+### 실제 API 형식
+
+Domainsduck API는 다음 형식을 사용합니다:
+
+**엔드포인트:**
+```
+GET https://eu.domainsduck.com/api/get/?domain={domain}&apikey={apikey}
+```
+
+**응답 예시:**
 
 ```json
-GET /v1/check?domain=example.com
-
 {
   "domain": "example.com",
-  "available": false,
-  "tld": "com",
-  "price": 12.99
+  "availability": "false"
 }
 ```
 
-### Bulk Check (예상)
+**`availability` 값:**
+- `"true"`: 도메인 사용 가능
+- `"false"`: 도메인 이미 등록됨
+- `"premium domain"`: 프리미엄 도메인 (사용 가능)
+- `"reserved"`: 예약된 도메인
+- `"bad tld"`: 유효하지 않은 TLD
 
-```json
-POST /v1/check/bulk
-Body: { "domains": ["example.com", "test.com"] }
+### Bulk Check
 
-{
-  "results": [
-    {
-      "domain": "example.com",
-      "available": false
-    },
-    {
-      "domain": "test.com",
-      "available": true
-    }
-  ]
-}
+> **참고**: Domainsduck에는 Bulk API가 없습니다. 
+> 여러 도메인 체크 시 개별 API를 병렬로 호출합니다.
+
+```typescript
+// 내부적으로 Promise.all로 병렬 처리
+const results = await checkDomainsBulk(['example.com', 'test.com']);
 ```
-
-**참고:** 실제 API 응답 형식은 Domainsduck 문서를 확인하세요.
 
 ---
 
@@ -375,99 +373,11 @@ Body: { "domains": ["example.com", "test.com"] }
 
 ### 2. Rate Limiting
 - 30 요청/시간 제한 준수
-- 대량 체크 시 `checkDomainsBulk()` 사용 권장
-- 프로덕션에서는 Redis 기반 rate limiter 고려
 
 ### 3. 타임아웃
 - Vercel Hobby 플랜: 10초 제한
-- 긴 작업은 여러 요청으로 분할
-- Background job 고려
 
 ### 4. 에러 처리
-- 항상 try-catch로 에러 처리
-- 사용자에게 명확한 에러 메시지 제공
-- 로그로 디버깅 정보 기록
+- try-catch로 에러 처리 필요
 
----
 
-## 🔗 참고 자료
-
-- [Domainsduck 공식 문서](https://domainsduck.com/docs)
-- [API 가격 정책](https://domainsduck.com/pricing)
-- [Rate Limiting 가이드](https://domainsduck.com/docs/rate-limits)
-
----
-
-## 💡 팁
-
-### Bulk API 활용
-
-10개 이상의 도메인을 체크할 때는 반드시 Bulk API를 사용하세요:
-
-```typescript
-// ❌ 비효율적 (10개 API 호출)
-for (const domain of domains) {
-  await checkDomain(domain);
-}
-
-// ✅ 효율적 (1개 API 호출)
-const results = await checkDomainsBulk(domains);
-```
-
-### 캐싱 구현 (주의!)
-
-⚠️ **경고:** 도메인 모니터링에서 캐싱은 위험할 수 있습니다!
-
-**문제점:**
-- 도메인 상태 변경을 놓칠 수 있음
-- "registered" → "available" 전환 시 알림 누락 가능
-
-**안전한 캐싱 전략:**
-
-```typescript
-// ✅ 사용자 액션에서만 짧은 캐시 (Rate limit 방지)
-const uiCache = new Map<string, { result: boolean, timestamp: number }>();
-const SHORT_CACHE_TTL = 30 * 1000; // 30초
-
-async function checkForUI(domain: string) {
-  const cached = uiCache.get(domain);
-  
-  // 30초 이내는 캐시 반환 (새로고침 연타 방지)
-  if (cached && Date.now() - cached.timestamp < SHORT_CACHE_TTL) {
-    return cached.result;
-  }
-
-  const result = await checkDomain(domain);
-  uiCache.set(domain, { result, timestamp: Date.now() });
-  
-  return result;
-}
-
-// ❌ CRON Job에서는 절대 캐싱하지 마세요!
-async function cronCheck(domain: string) {
-  // 항상 실시간 체크
-  return await checkDomain(domain);
-}
-```
-
-**권장사항:**
-- **CRON Job**: 캐싱 절대 금지 (상태 변경 감지가 목적)
-- **대시보드**: 짧은 캐시 (30초~1분, Rate limit 방지용)
-- **메타데이터**: 긴 캐시 가능 (TLD 가격 등)
-
-### 재시도 로직
-
-네트워크 에러 시 자동 재시도:
-
-```typescript
-async function checkWithRetry(domain: string, maxRetries = 3) {
-  for (let i = 0; i < maxRetries; i++) {
-    try {
-      return await checkDomain(domain);
-    } catch (error) {
-      if (i === maxRetries - 1) throw error;
-      await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
-    }
-  }
-}
-```

@@ -15,7 +15,7 @@ git add .
 git commit -m "Initial commit: Domain Checker with automated monitoring"
 
 # GitHub 리포지토리 연결
-git remote add origin https://github.com/Ordyne/domainchecker.git
+git remote add origin https://github.com/ordyne/domainchecker.git
 
 # 푸시
 git branch -M main
@@ -48,12 +48,12 @@ git push -u origin main
 
 1. [vercel.com](https://vercel.com) 로그인
 2. "Add New" → "Project" 클릭
-3. GitHub 리포지토리 `Ordyne/domainchecker` 선택
+3. GitHub 리포지토리 선택
 4. Framework Preset: **Next.js** (자동 감지)
 
 #### B. 환경 변수 설정
 
-**Environment Variables** 섹션에서 다음 7개 추가:
+**Environment Variables** 섹션에서 다음 8개 추가:
 
 | Key | Value | Environment |
 |-----|-------|-------------|
@@ -61,8 +61,9 @@ git push -u origin main
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | `eyJhbGc...` (Supabase 대시보드에서 복사) | Production, Preview, Development |
 | `RESEND_API_KEY` | `re_...` (Resend에서 발급) | Production |
 | `RESEND_FROM_EMAIL` | `onboarding@resend.dev` | Production |
-| `NOTIFICATION_EMAIL` | `your-email@gmail.com` | Production |
-| `DOMAINSDUCK_API_KEY` | `YOUR_API_KEY` (Domainsduck에서 발급) | Production |
+| `NOTIFICATION_EMAIL` | **Resend 계정 이메일** (테스트 모드 제한) | Production |
+| `DOMAINSDUCK_API_KEY` | `YOUR_API_KEY` (https://api.domainsduck.com에서 발급) | Production |
+| `DOMAINSDUCK_API_URL` | `https://eu.domainsduck.com` | Production |
 | `CRON_SECRET` | `your_generated_secret` | Production |
 
 > **⚠️ 주의**: 실제 값은 `.env.local` 파일 참고
@@ -153,10 +154,23 @@ curl -X GET \
 ### 3. API Route 에러
 
 **에러**: `Missing required environment variables`
-- **해결**: Vercel 환경 변수 7개 모두 설정 확인
+- **해결**: Vercel 환경 변수 8개 모두 설정 확인
 
 **에러**: `Database connection failed`
 - **해결**: Supabase URL과 ANON_KEY 확인
+
+### 4. 이메일 발송 실패
+
+**에러**: `validation_error: You can only send testing emails to your own email address`
+- **원인**: Resend 테스트 모드에서는 계정 이메일로만 발송 가능
+- **해결**: `NOTIFICATION_EMAIL`을 Resend 계정 이메일로 변경
+
+### 5. Domainsduck API 에러
+
+**에러**: API가 HTML 페이지 반환
+- **원인**: 잘못된 API 엔드포인트 사용
+- **해결**: `DOMAINSDUCK_API_URL`을 `https://eu.domainsduck.com`으로 설정
+- **참고**: API 형식은 `/api/get/?domain=example.com&apikey=YOUR_KEY`
 
 ---
 
@@ -193,15 +207,6 @@ git push origin main
 # 4. 배포 확인
 # Vercel Dashboard에서 배포 상태 확인
 ```
-
----
-
-## 📝 중요 URL 모음
-
-- **Production URL**: `https://your-app.vercel.app`
-- **GitHub Repo**: `https://github.com/Ordyne/domainchecker`
-- **Vercel Dashboard**: `https://vercel.com/your-username/domainchecker`
-- **Supabase Dashboard**: `https://supabase.com/dashboard/project/your-project-id`
 
 ---
 
